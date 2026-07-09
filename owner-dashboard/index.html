@@ -558,12 +558,16 @@ window.saveStaff = function() {
     const s = { name, type, shop };
     const newList = [...staffDB];
     if(idx !== "") newList[idx] = s; else newList.push(s);
-    supabase.from('config').upsert({ key: "staff_v4", value: { list: newList } }).then(closeStaffModal);
+    supabase.from('config').upsert({ key: "staff_v4", value: { list: newList } }).then(() => {
+        staffDB = newList;
+        refreshUI();
+        closeStaffModal();
+    });
 };
 window.openStaffModal = function() { document.getElementById('staffModal').style.display="flex"; document.getElementById('sId').value=""; document.getElementById('sName').value=""; };
 window.closeStaffModal = function() { document.getElementById('staffModal').style.display="none"; };
 window.editStaff = function(i) { const s = staffDB[i]; openStaffModal(); document.getElementById('sId').value=i; document.getElementById('sName').value=s.name; document.getElementById('sType').value=s.type; document.getElementById('sShop').value=s.shop; };
-window.deleteStaff = function(i) { if(confirm("Delete Staff?")) { const newList = [...staffDB]; newList.splice(i,1); supabase.from('config').upsert({ key: "staff_v4", value: { list: newList } }); } };
+window.deleteStaff = function(i) { if(confirm("Delete Staff?")) { const newList = [...staffDB]; newList.splice(i,1); supabase.from('config').upsert({ key: "staff_v4", value: { list: newList } }).then(() => { staffDB = newList; refreshUI(); }); } };
 
 /* --- CLIENT CRUD --- */
 window.saveClient = function() {
@@ -573,7 +577,11 @@ window.saveClient = function() {
     const c = { name, phone: document.getElementById('cPhone').value, pd: Number(document.getElementById('cPriceD').value), pa: Number(document.getElementById('cPriceA').value) };
     const newList = [...clientDB];
     if(idx !== "") newList[idx] = c; else newList.push(c);
-    supabase.from('config').upsert({ key: "clients_v4", value: { list: newList } }).then(closeClientModal);
+    supabase.from('config').upsert({ key: "clients_v4", value: { list: newList } }).then(() => {
+        clientDB = newList;
+        refreshUI();
+        closeClientModal();
+    });
 };
 window.openClientModal = function() { 
     document.getElementById('clientModal').style.display="flex"; 
@@ -585,7 +593,7 @@ window.openClientModal = function() {
 };
 window.closeClientModal = function() { document.getElementById('clientModal').style.display="none"; };
 window.editClient = function(i) { const c = clientDB[i]; openClientModal(); document.getElementById('cId').value=i; document.getElementById('cName').value=c.name; document.getElementById('cPhone').value=c.phone; document.getElementById('cPriceD').value=c.pd; document.getElementById('cPriceA').value=c.pa; };
-window.deleteClient = function(i) { if(confirm("Delete Client?")) { const newList = [...clientDB]; newList.splice(i,1); supabase.from('config').upsert({ key: "clients_v4", value: { list: newList } }); } };
+window.deleteClient = function(i) { if(confirm("Delete Client?")) { const newList = [...clientDB]; newList.splice(i,1); supabase.from('config').upsert({ key: "clients_v4", value: { list: newList } }).then(() => { clientDB = newList; refreshUI(); }); } };
 
 /* --- ROUTE CRUD --- */
 window.saveRoute = function() {
@@ -594,12 +602,16 @@ window.saveRoute = function() {
     if(!name) return;
     const newList = [...routeMasterDB];
     if(idx !== "") newList[idx] = { name }; else newList.push({ name });
-    supabase.from('config').upsert({ key: "routeMaster_v4", value: { list: newList } }).then(closeRouteModal);
+    supabase.from('config').upsert({ key: "routeMaster_v4", value: { list: newList } }).then(() => {
+        routeMasterDB = newList;
+        refreshUI();
+        closeRouteModal();
+    });
 };
 window.openRouteModal = function() { document.getElementById('routeModal').style.display="flex"; document.getElementById('rIdx').value=""; document.getElementById('rName').value=""; };
 window.closeRouteModal = function() { document.getElementById('routeModal').style.display="none"; };
 window.editRoute = function(i) { const r = routeMasterDB[i]; openRouteModal(); document.getElementById('rIdx').value=i; document.getElementById('rName').value=r.name; };
-window.deleteRoute = function(i) { if(confirm("Delete Route?")) { const newList = [...routeMasterDB]; newList.splice(i,1); supabase.from('config').upsert({ key: "routeMaster_v4", value: { list: newList } }); } };
+window.deleteRoute = function(i) { if(confirm("Delete Route?")) { const newList = [...routeMasterDB]; newList.splice(i,1); supabase.from('config').upsert({ key: "routeMaster_v4", value: { list: newList } }).then(() => { routeMasterDB = newList; refreshUI(); }); } };
 
 /* --- RENDERERS --- */
 function renderHome() {
