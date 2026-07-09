@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <title>IyersFood – ERP Pro v3.3</title>
+<!-- Supabase client SDK CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../supabase-config.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -528,8 +531,8 @@
     </div>
 </div>
 
-<script type="module">
-import { supabase } from "../supabase-config.js";
+<script>
+const supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
 /* --- CONFIG --- */
 const SHOPS = ["Nettor", "Kannankulangara", "Vadakkekotta"];

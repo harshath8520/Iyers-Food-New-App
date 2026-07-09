@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Supabase client SDK CDN -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../supabase-config.js"></script>
 <style>
     :root {
         --primary: #4f46e5;
@@ -670,9 +671,7 @@
 
 <script>
     // Supabase Configuration
-    const supabaseUrl = 'https://lusoaotlfxfrpmydtb.supabase.co';
-    const supabaseKey = 'sb_publishable_WcXzhxVxPYONNquB5DlSiw_akXk8DPg';
-    const db = supabase.createClient(supabaseUrl, supabaseKey);
+    const db = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
     /* --- DEBUG CONSOLE LOGGER --- */
     function showDebugError(msg) {

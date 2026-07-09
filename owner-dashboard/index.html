@@ -6,6 +6,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Supabase client SDK CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../supabase-config.js"></script>
 <style>
     :root {
         --nav-bg: #090d16; /* Premium dark background */
@@ -385,8 +388,8 @@
     <div style="display:flex; gap:10px; margin-top:20px"><button class="btn btn-primary" style="flex:1" onclick="saveRoute()">Save</button><button class="btn btn-danger" style="flex:1" onclick="closeRouteModal()">Cancel</button></div>
 </div></div>
 
-<script type="module">
-import { supabase } from "../supabase-config.js";
+<script>
+const supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
 /* --- NAVIGATION --- */
 let activeSection = 'home';
