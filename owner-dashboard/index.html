@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IyersFood | Admin Console</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    :root {
+        --nav-bg: #090d16; /* Premium dark background */
+        --nav-hover: rgba(255, 255, 255, 0.05);
+        --primary: #4f46e5; /* Rich Indigo */
+        --primary-light: #818cf8;
+        --bg-main: #f8fafc;
+        --border: #e2e8f0;
+        --text-dark: #0f172a;
+        --text-light: #64748b;
+        --danger: #ef4444;
+        --success: #10b981;
+    }
+    * { box-sizing: border-box; outline: none; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg-main); display: flex; height: 100vh; overflow: hidden; color: var(--text-dark); }
+
+    /* --- SIDEBAR --- */
+    .sidebar { width: 260px; background: var(--nav-bg); color: white; display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .brand { height: 70px; display: flex; align-items: center; padding: 0 24px; font-weight: 800; font-size: 18px; border-bottom: 1px solid rgba(255,255,255,0.06); letter-spacing: -0.5px; }
+    .brand span { color: var(--primary-light); margin-left: 4px; font-weight: 500; }
+    .nav-list { padding: 20px 0; flex: 1; }
+    .nav-item { padding: 12px 20px; margin: 4px 12px; border-radius: 8px; cursor: pointer; color: #94a3b8; font-size: 13.5px; font-weight: 500; display: flex; align-items: center; gap: 12px; transition: all 0.2s ease; }
+    .nav-item svg { width: 18px; height: 18px; color: #94a3b8; transition: color 0.2s; }
+    .nav-item:hover { background: var(--nav-hover); color: white; }
+    .nav-item:hover svg { color: white; }
+    .nav-item.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25); }
+    .nav-item.active svg { color: white; }
+    
+    /* --- MAIN --- */
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar { height: 70px; background: white; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; padding: 0 32px; }
+    .page-title { font-weight: 800; font-size: 20px; color: var(--text-dark); letter-spacing: -0.5px; }
+    .user { font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 10px; color: var(--text-dark); }
+    .avatar { width: 36px; height: 36px; background: #e0e7ff; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; border: 2px solid white; box-shadow: 0 0 0 2px var(--primary); }
+
+    .content { flex: 1; overflow-y: auto; padding: 32px; display: none; }
+    .content.active { display: block; }
+
+    /* --- DASHBOARD CARDS --- */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 24px; }
+    .card { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+    
+    .kpi-card { display: flex; justify-content: space-between; align-items: center; transition: all 0.2s ease; }
+    .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02); }
+    .kpi-card .label { font-size: 11px; text-transform: uppercase; color: var(--text-light); font-weight: 700; margin-bottom: 6px; letter-spacing: 0.5px; }
+    .kpi-card .val { font-size: 26px; font-weight: 800; color: var(--text-dark); letter-spacing: -0.5px; }
+    .kpi-icon-wrapper { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .kpi-icon-wrapper svg { width: 24px; height: 24px; }
+    .kpi-prod { background: #e0e7ff; color: #4f46e5; }
+    .kpi-del { background: #dcfce7; color: #10b981; }
+    .kpi-staff { background: #fae8ff; color: #d946ef; }
+    .kpi-routes { background: #ffedd5; color: #f97316; }
+
+    .chart-card { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); height: 400px; margin-bottom: 24px; }
+
+    /* --- FILTERS --- */
+    .filter-bar { display: flex; gap: 16px; margin-bottom: 24px; align-items: center; background: white; padding: 16px 20px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); flex-wrap: wrap; }
+    .filter-bar strong { font-size: 16px; color: var(--text-dark); font-weight: 700; }
+    .filter-actions { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; align-items: center; }
+    
+    select, input[type="date"], input[type="text"] { padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 13.5px; font-weight: 500; color: var(--text-dark); background-color: #f8fafc; transition: all 0.2s; }
+    select:focus, input:focus { border-color: var(--primary); background-color: white; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+    
+    .btn { padding: 10px 18px; border-radius: 8px; font-size: 13.5px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-primary { background: var(--primary); color: white; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.1); }
+    .btn-primary:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(79, 70, 229, 0.2); }
+    .btn-danger { background: #fee2e2; color: var(--danger); }
+    .btn-danger:hover { background: #fcd3d3; transform: translateY(-1px); }
+
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; font-weight: 600; }
+    .btn-outline-primary { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+    .btn-outline-primary:hover { background: var(--primary); color: white; }
+    .btn-outline-danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+    .btn-outline-danger:hover { background: var(--danger); color: white; }
+    
+    /* --- TABLE --- */
+    .table-container { background: white; border: 1px solid var(--border); border-radius: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch; box-shadow: 0 1px 3px rgba(0,0,0,0.02); margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; text-align: left; }
+    th { padding: 14px 20px; background: #f8fafc; border-bottom: 1px solid var(--border); color: var(--text-light); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+    td { padding: 14px 20px; border-bottom: 1px solid var(--border); color: var(--text-dark); vertical-align: middle; white-space: nowrap; }
+    tr:last-child td { border-bottom: none; }
+    
+    /* --- BADGES --- */
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+    .bg-blue { background: #e0f2fe; color: #0284c7; }
+    .bg-green { background: #dcfce7; color: #16a34a; }
+    .bg-orange { background: #ffedd5; color: #c2410c; }
+    
+    .badge-role { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .role-production { background: #e0e7ff; color: #4338ca; }
+    .role-delivery { background: #dcfce7; color: #15803d; }
+    .role-dispatch { background: #fef3c7; color: #b45309; }
+
+    .badge-shop { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; background: #f1f5f9; color: #475569; }
+
+    /* --- EDITOR MODAL --- */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal { background: white; padding: 28px; border-radius: 16px; width: 100%; max-width: 420px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); border: 1px solid var(--border); }
+    .modal h3 { font-size: 18px; font-weight: 700; color: var(--text-dark); margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+    .form-row { margin-bottom: 16px; }
+    .form-row label { display: block; font-size: 11px; font-weight: 600; color: var(--text-light); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-row input, .form-row select { width: 100%; }
+
+    /* --- DELIVERY DETAILS --- */
+    .driver-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .driver-card { background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: transform 0.2s; }
+    .driver-card:hover { transform: translateY(-2px); }
+    .driver-head { padding: 16px 20px; background: #f8fafc; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: var(--text-dark); }
+    .driver-head span:first-child { font-size: 15px; }
+    .driver-head span:last-child { font-size: 11px; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 12px; font-weight: 600; }
+    
+    .d-stat { display: flex; padding: 16px; }
+    .d-stat-item { flex: 1; text-align: center; }
+    .d-stat-item:first-child { border-right: 1px solid var(--border); }
+    .d-stat-lbl { font-size: 10px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .d-stat-val { font-size: 20px; font-weight: 700; color: var(--text-dark); }
+    
+    .client-list { padding: 16px; max-height: 200px; overflow-y: auto; }
+    .client-row { display: flex; justify-content: space-between; font-size: 12px; padding: 8px 0; border-bottom: 1px dashed var(--border); }
+
+    /* --- RESPONSIVE STYLE --- */
+    .hamburger { display: none; background: #f1f5f9; border: none; padding: 10px; border-radius: 8px; cursor: pointer; flex-direction: column; gap: 4px; width: 38px; height: 38px; justify-content: center; align-items: center; transition: all 0.2s; }
+    .hamburger:hover { background: #e2e8f0; }
+    .hamburger div { width: 18px; height: 2px; background: var(--text-dark); border-radius: 1px; transition: 0.3s; }
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); z-index: 99; backdrop-filter: blur(4px); }
+    
+    /* Custom scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); }
+    .sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+    @media (max-width: 1024px) {
+        .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    }
+
+    @media (max-width: 768px) {
+        .hamburger { display: flex; }
+        .sidebar { position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; transform: translateX(-100%); box-shadow: 4px 0 20px rgba(0,0,0,0.1); }
+        .sidebar.open { transform: translateX(0); }
+        .sidebar-overlay.show { display: block; }
+        .topbar { padding: 0 20px; height: 64px; }
+        .page-title { font-size: 18px; }
+        .content { padding: 20px; }
+        .chart-card { height: 300px; padding: 16px; }
+        .driver-grid { grid-template-columns: 1fr; gap: 16px; }
+        .filter-bar { padding: 16px; gap: 12px; }
+        .filter-actions { margin-left: 0; width: 100%; }
+        .filter-actions .btn, .filter-actions input, .filter-actions select { flex: 1; min-width: 120px; text-align: center; }
+        .search-input { width: 100% !important; margin-left: 0 !important; }
+        .sort-select { width: 100% !important; }
+        .modal { padding: 20px; }
+    }
+    
+    @media (max-width: 480px) {
+        .kpi-grid { grid-template-columns: 1fr; gap: 16px; }
+    }
+</style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<div class="sidebar">
+    <div class="brand">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 24px; height: 24px; color: var(--primary-light); margin-right: 8px;"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124l-.847-7.002a2.25 2.25 0 00-2.208-1.984h-2.247a1.125 1.125 0 00-1.125 1.125v12.75" /></svg>
+        IyersFood <span>Console</span>
+    </div>
+    <div class="nav-list">
+        <div class="nav-item active" id="nav-home" onclick="nav('home', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
+            Dashboard
+        </div>
+        <div class="nav-item" id="nav-prod" onclick="nav('prod', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M21 3v18M12 3v18" /></svg>
+            Production Master
+        </div>
+        <div class="nav-item" id="nav-del" onclick="nav('del', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124l-.847-7.002a2.25 2.25 0 00-2.208-1.984h-2.247a1.125 1.125 0 00-1.125 1.125v12.75" /></svg>
+            Delivery Reports
+        </div>
+        <div class="nav-item" id="nav-client" onclick="nav('client', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.109A12.018 12.018 0 0112 21c-3.125 0-6.087-.912-8.582-2.493V19.1a4.125 4.125 0 017.533-2.493 9.3 9.3 0 003.329 1.458M12 10.5a3 3 0 11-6 0 3 3 0 016 0zm6.303-2.697a3 3 0 11-3.6 3.6 3 3 0 013.6-3.6z" /></svg>
+            Client Register
+        </div>
+        <div class="nav-item" id="nav-staff" onclick="nav('staff', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" /></svg>
+            Staff Register
+        </div>
+        <div class="nav-item" id="nav-routeMaster" onclick="nav('routeMaster', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25s-7.5-4.108-7.5-11.25a7.5 7.5 0 1115 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            Route Register
+        </div>
+        <div class="nav-item" id="nav-sales" onclick="nav('sales', this)">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-1.958-.59-1.008-.738-1.008-1.937 0-2.675 1.007-.738 2.642-.738 3.65 0 .563.413.879.962.879 1.543m0-6.667v.5m-3-1v.5" /></svg>
+            Sales Analytics
+        </div>
+    </div>
+</div>
+
+<div class="main">
+    <div class="topbar">
+        <button class="hamburger" onclick="toggleSidebar()">
+            <div></div>
+            <div></div>
+            <div></div>
+        </button>
+        <div class="page-title" id="pageTitle">Dashboard</div>
+        <div class="user">Owner<div class="avatar">O</div></div>
+    </div>
+
+    <!-- HOME VIEW -->
+    <div id="home" class="content active">
+        <div class="kpi-grid">
+            <div class="card kpi-card">
+                <div>
+                    <div class="label">Total Production</div>
+                    <div class="val" id="kpiProd">0 L</div>
+                </div>
+                <div class="kpi-icon-wrapper kpi-prod">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M21 3v18M12 3v18" /></svg>
+                </div>
+            </div>
+            <div class="card kpi-card">
+                <div>
+                    <div class="label">Total Deliveries</div>
+                    <div class="val" id="kpiDel">0 L</div>
+                </div>
+                <div class="kpi-icon-wrapper kpi-del">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124l-.847-7.002a2.25 2.25 0 00-2.208-1.984h-2.247a1.125 1.125 0 00-1.125 1.125v12.75" /></svg>
+                </div>
+            </div>
+            <div class="card kpi-card">
+                <div>
+                    <div class="label">Active Staff</div>
+                    <div class="val" id="kpiStaff">-</div>
+                </div>
+                <div class="kpi-icon-wrapper kpi-staff">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" /></svg>
+                </div>
+            </div>
+            <div class="card kpi-card">
+                <div>
+                    <div class="label">Active Routes</div>
+                    <div class="val" id="kpiRoutes">0</div>
+                </div>
+                <div class="kpi-icon-wrapper kpi-routes">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25s-7.5-4.108-7.5-11.25a7.5 7.5 0 1115 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                </div>
+            </div>
+        </div>
+        <div class="chart-card"><canvas id="chartMain"></canvas></div>
+    </div>
+
+    <!-- STAFF VIEW -->
+    <div id="staff" class="content">
+        <div class="filter-bar">
+            <strong>Staff Register</strong>
+            <div class="filter-actions">
+                <button class="btn btn-primary" onclick="openStaffModal()">+ Add Staff</button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead><tr><th>Name</th><th>Role</th><th>Shop</th><th>Action</th></tr></thead>
+                <tbody id="staffTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PRODUCTION VIEW -->
+    <div id="prod" class="content">
+        <div class="filter-bar">
+            <strong>Production Logs</strong>
+            <div class="filter-actions">
+                <input type="date" id="prodDate" onchange="loadDateData()">
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead><tr><th>Batch</th><th>Shop</th><th>Staff</th><th>Product</th><th>Type</th><th style="text-align:right">Qty</th></tr></thead>
+                <tbody id="prodTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- DELIVERY VIEW -->
+    <div id="del" class="content">
+        <div class="filter-bar">
+            <strong>Delivery Reports</strong>
+            <div class="filter-actions">
+                <input type="date" id="delDate" onchange="loadDateData()">
+            </div>
+        </div>
+        <div class="driver-grid" id="deliveryGrid"></div>
+    </div>
+
+    <!-- CLIENT VIEW -->
+    <div id="client" class="content">
+        <div class="filter-bar">
+            <strong>Client Register</strong>
+            <input type="text" id="clientSearch" placeholder="Search client..." oninput="debouncedRenderClients()" class="search-input">
+            <select id="clientSort" onchange="renderClients()" class="sort-select">
+                <option value="none">Sort By</option>
+                <option value="asc">A-Z</option>
+                <option value="desc">Z-A</option>
+            </select>
+            <div class="filter-actions">
+                <button class="btn btn-primary" onclick="bulkImportManualList()">Bulk Import List</button>
+                <button class="btn btn-primary" onclick="openClientModal()">+ Add Client</button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead><tr><th>Name</th><th>Phone</th><th>Price (D/A)</th><th>Action</th></tr></thead>
+                <tbody id="clientTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ROUTE VIEW -->
+    <div id="routeMaster" class="content">
+        <div class="filter-bar">
+            <strong>Route Master</strong>
+            <div class="filter-actions">
+                <button class="btn btn-primary" onclick="openRouteModal()">+ Add Route</button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead><tr><th>Route Name</th><th>Action</th></tr></thead>
+                <tbody id="routeTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SALES VIEW -->
+    <div id="sales" class="content">
+        <div class="filter-bar">
+            <strong>Sales Analytics</strong>
+            <div class="filter-actions">
+                <button class="btn btn-primary" onclick="syncSalesClients()">Sync Missing Clients</button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead><tr><th>Client</th><th>Total Sales</th><th>Total Paid</th><th style="text-align:right">Balance</th></tr></thead>
+                <tbody id="salesTable"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="staffModal"><div class="modal">
+    <h3>Staff Details</h3><input type="hidden" id="sId">
+    <div class="form-row"><label>Name</label><input type="text" id="sName"></div>
+    <div class="form-row"><label>Role</label><select id="sType"><option value="PRODUCTION">Production</option><option value="DELIVERY">Delivery</option><option value="DISPATCH">Dispatch</option></select></div>
+    <div class="form-row"><label>Shop</label><select id="sShop"><option>Nettor</option><option>Kannankulangara</option><option>Vadakkekotta</option><option value="Common">Common</option></select></div>
+    <div style="display:flex; gap:10px; margin-top:20px"><button class="btn btn-primary" style="flex:1" onclick="saveStaff()">Save</button><button class="btn btn-danger" style="flex:1" onclick="closeStaffModal()">Cancel</button></div>
+</div></div>
+
+<div class="modal-overlay" id="clientModal"><div class="modal">
+    <h3>Client Details</h3><input type="hidden" id="cId">
+    <div class="form-row"><label>Name</label><input type="text" id="cName"></div>
+    <div class="form-row"><label>Phone</label><input type="text" id="cPhone"></div>
+    <div class="form-row"><label>Price Dosa</label><input type="number" id="cPriceD" value="45"></div>
+    <div class="form-row"><label>Price Appam</label><input type="number" id="cPriceA" value="55"></div>
+    <div style="display:flex; gap:10px; margin-top:20px"><button class="btn btn-primary" style="flex:1" onclick="saveClient()">Save</button><button class="btn btn-danger" style="flex:1" onclick="closeClientModal()">Cancel</button></div>
+</div></div>
+
+<div class="modal-overlay" id="routeModal"><div class="modal">
+    <h3>Route Details</h3><input type="hidden" id="rIdx">
+    <div class="form-row"><label>Name</label><input type="text" id="rName"></div>
+    <div style="display:flex; gap:10px; margin-top:20px"><button class="btn btn-primary" style="flex:1" onclick="saveRoute()">Save</button><button class="btn btn-danger" style="flex:1" onclick="closeRouteModal()">Cancel</button></div>
+</div></div>
+
+<script type="module">
+import { supabase } from "../supabase-config.js";
+
+/* --- NAVIGATION --- */
+let activeSection = 'home';
+window.nav = function(id, el) {
+    activeSection = id;
+    document.querySelectorAll('.content').forEach(d => d.classList.remove('active'));
+    const target = document.getElementById(id);
+    if(target) target.classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(d => d.classList.remove('active'));
+    if(el) el.classList.add('active');
+    const title = document.getElementById('pageTitle');
+    if(title && el) {
+        // Keep only plain text without SVG elements
+        title.innerText = el.innerText.trim();
+    }
+    
+    // Close sidebar on mobile navigation
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (sidebar.classList.contains('open')) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+    }
+    
+    refreshUI();
+};
+
+window.toggleSidebar = function() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+};
+
+/* --- STATE --- */
+let erpDB = {};
+let staffDB = [];
+let clientDB = [];
+let routeMasterDB = [];
+let routeDaysDB = {};
+let currentDate = new Date().toISOString().split('T')[0];
+let mainChart = null;
+
+/* --- DATA LOADING --- */
+async function loadData() {
+    console.log("Loading initial data from Supabase...");
+    
+    try {
+        const [staffRes, clientsRes, routeMasterRes, erpDaysRes, routeDaysRes] = await Promise.all([
+            supabase.from('config').select('value').eq('key', 'staff_v4').maybeSingle(),
+            supabase.from('config').select('value').eq('key', 'clients_v4').maybeSingle(),
+            supabase.from('config').select('value').eq('key', 'routeMaster_v4').maybeSingle(),
+            supabase.from('erp_days').select('*'),
+            supabase.from('route_days').select('*')
+        ]);
+
+        if(staffRes.data && staffRes.data.value) staffDB = staffRes.data.value.list || [];
+        if(clientsRes.data && clientsRes.data.value) clientDB = clientsRes.data.value.list || [];
+        if(routeMasterRes.data && routeMasterRes.data.value) routeMasterDB = routeMasterRes.data.value.list || [];
+        
+        if(erpDaysRes.data) {
+            erpDB = {};
+            erpDaysRes.data.forEach(row => {
+                erpDB[row.date] = {
+                    productions: row.productions,
+                    deliveries: row.deliveries,
+                    staffDeclarations: row.staff_declarations,
+                    returns: row.returns
+                };
+            });
+        }
+        
+        if(routeDaysRes.data) {
+            routeDaysDB = {};
+            routeDaysRes.data.forEach(row => {
+                routeDaysDB[row.date] = {
+                    PACKET: row.packet,
+                    LOOSE: row.loose
+                };
+            });
+        }
+        
+        refreshUI();
+        console.log("Initial Supabase data loaded ✅");
+    } catch (e) {
+        console.error("Initial load error:", e);
+    }
+
+    // 2. Attach background Realtime listeners
+    supabase.channel('config-all-sync')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'config' }, payload => {
+            const row = payload.new;
+            if(!row) return;
+            if(row.key === 'staff_v4') staffDB = row.value.list || [];
+            if(row.key === 'clients_v4') clientDB = row.value.list || [];
+            if(row.key === 'routeMaster_v4') routeMasterDB = row.value.list || [];
+            refreshUI();
+        })
+        .subscribe();
+
+    supabase.channel('erp-days-sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'erp_days' }, payload => {
+            supabase.from('erp_days').select('*').then(({ data }) => {
+                if (data) {
+                    erpDB = {};
+                    data.forEach(row => {
+                        erpDB[row.date] = {
+                            productions: row.productions,
+                            deliveries: row.deliveries,
+                            staffDeclarations: row.staff_declarations,
+                            returns: row.returns
+                        };
+                    });
+                    refreshUI();
+                }
+            });
+        })
+        .subscribe();
+
+    supabase.channel('route-days-sync')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'route_days' }, payload => {
+            supabase.from('route_days').select('*').then(({ data }) => {
+                if (data) {
+                    routeDaysDB = {};
+                    data.forEach(row => {
+                        routeDaysDB[row.date] = {
+                            PACKET: row.packet,
+                            LOOSE: row.loose
+                        };
+                    });
+                    refreshUI();
+                }
+            });
+        })
+        .subscribe();
+}
+window.loadData = loadData;
+
+function refreshUI() {
+    try {
+        if(activeSection === 'home') renderHome();
+        else if(activeSection === 'staff') renderStaffs();
+        else if(activeSection === 'prod') renderProduction();
+        else if(activeSection === 'del') renderDelivery();
+        else if(activeSection === 'client') renderClients();
+        else if(activeSection === 'routeMaster') renderRouteMaster();
+        else if(activeSection === 'sales') renderSales();
+    } catch(e) { console.error("UI Refresh Error:", e); }
+}
+
+function loadDateData() {
+    const pD = document.getElementById('prodDate');
+    const dD = document.getElementById('delDate');
+    if(pD && pD.value) currentDate = pD.value;
+    if(dD && dD.value) currentDate = dD.value;
+    refreshUI();
+}
+
+/* --- STAFF CRUD --- */
+window.saveStaff = function() {
+    const idx = document.getElementById('sId').value;
+    const name = document.getElementById('sName').value.trim();
+    if(!name) return;
+    const type = document.getElementById('sType').value;
+    const shop = document.getElementById('sShop').value;
+    const s = { name, type, shop };
+    const newList = [...staffDB];
+    if(idx !== "") newList[idx] = s; else newList.push(s);
+    supabase.from('config').upsert({ key: "staff_v4", value: { list: newList } }).then(closeStaffModal);
+};
+window.openStaffModal = function() { document.getElementById('staffModal').style.display="flex"; document.getElementById('sId').value=""; document.getElementById('sName').value=""; };
+window.closeStaffModal = function() { document.getElementById('staffModal').style.display="none"; };
+window.editStaff = function(i) { const s = staffDB[i]; openStaffModal(); document.getElementById('sId').value=i; document.getElementById('sName').value=s.name; document.getElementById('sType').value=s.type; document.getElementById('sShop').value=s.shop; };
+window.deleteStaff = function(i) { if(confirm("Delete Staff?")) { const newList = [...staffDB]; newList.splice(i,1); supabase.from('config').upsert({ key: "staff_v4", value: { list: newList } }); } };
+
+/* --- CLIENT CRUD --- */
+window.saveClient = function() {
+    const idx = document.getElementById('cId').value;
+    const name = document.getElementById('cName').value.trim();
+    if(!name) return;
+    const c = { name, phone: document.getElementById('cPhone').value, pd: Number(document.getElementById('cPriceD').value), pa: Number(document.getElementById('cPriceA').value) };
+    const newList = [...clientDB];
+    if(idx !== "") newList[idx] = c; else newList.push(c);
+    supabase.from('config').upsert({ key: "clients_v4", value: { list: newList } }).then(closeClientModal);
+};
+window.openClientModal = function() { 
+    document.getElementById('clientModal').style.display="flex"; 
+    document.getElementById('cId').value=""; 
+    document.getElementById('cName').value=""; 
+    document.getElementById('cPhone').value="";
+    document.getElementById('cPriceD').value="45"; 
+    document.getElementById('cPriceA').value="55"; 
+};
+window.closeClientModal = function() { document.getElementById('clientModal').style.display="none"; };
+window.editClient = function(i) { const c = clientDB[i]; openClientModal(); document.getElementById('cId').value=i; document.getElementById('cName').value=c.name; document.getElementById('cPhone').value=c.phone; document.getElementById('cPriceD').value=c.pd; document.getElementById('cPriceA').value=c.pa; };
+window.deleteClient = function(i) { if(confirm("Delete Client?")) { const newList = [...clientDB]; newList.splice(i,1); supabase.from('config').upsert({ key: "clients_v4", value: { list: newList } }); } };
+
+/* --- ROUTE CRUD --- */
+window.saveRoute = function() {
+    const idx = document.getElementById('rIdx').value;
+    const name = document.getElementById('rName').value.trim();
+    if(!name) return;
+    const newList = [...routeMasterDB];
+    if(idx !== "") newList[idx] = { name }; else newList.push({ name });
+    supabase.from('config').upsert({ key: "routeMaster_v4", value: { list: newList } }).then(closeRouteModal);
+};
+window.openRouteModal = function() { document.getElementById('routeModal').style.display="flex"; document.getElementById('rIdx').value=""; document.getElementById('rName').value=""; };
+window.closeRouteModal = function() { document.getElementById('routeModal').style.display="none"; };
+window.editRoute = function(i) { const r = routeMasterDB[i]; openRouteModal(); document.getElementById('rIdx').value=i; document.getElementById('rName').value=r.name; };
+window.deleteRoute = function(i) { if(confirm("Delete Route?")) { const newList = [...routeMasterDB]; newList.splice(i,1); supabase.from('config').upsert({ key: "routeMaster_v4", value: { list: newList } }); } };
+
+/* --- RENDERERS --- */
+function renderHome() {
+    console.log("Rendering Home Dashboard for date:", currentDate);
+    let tP = 0, tD = 0;
+    const day = erpDB[currentDate];
+    if(day && day.productions) {
+        day.productions.forEach(p => tP += Number(p.qty)||0);
+    }
+
+    const rDay = routeDaysDB[currentDate];
+    if(rDay) { 
+        ['PACKET','LOOSE'].forEach(c => { if(rDay[c] && rDay[c].trips) rDay[c].trips.forEach(t => tD += (Number(t.dosa)||0) + (Number(t.appam)||0)); }); 
+    }
+
+    document.getElementById('kpiProd').innerText = tP.toLocaleString() + " L";
+    document.getElementById('kpiDel').innerText = tD.toLocaleString() + " L";
+    document.getElementById('kpiStaff').innerText = staffDB.length;
+    document.getElementById('kpiRoutes').innerText = routeMasterDB.length;
+    
+    if(typeof Chart !== 'undefined') {
+        const ctx = document.getElementById('chartMain');
+        if(ctx) {
+            if(mainChart) mainChart.destroy();
+            mainChart = new Chart(ctx, { 
+                type:'bar', 
+                data: { 
+                    labels:['Production','Delivery'], 
+                    datasets:[{ 
+                        label:'Volume (L)', 
+                        data:[tP, tD], 
+                        backgroundColor:['#6366f1','#10b981'],
+                        borderColor: ['#4f46e5', '#059669'],
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }] 
+                }, 
+                options: { 
+                    maintainAspectRatio:false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            ticks: { font: { family: 'Inter', weight: 500 } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { family: 'Inter', weight: 600 } }
+                        }
+                    }
+                } 
+            });
+        }
+    }
+}
+
+function renderStaffs() {
+    const tb = document.getElementById('staffTable'); if(!tb) return;
+    let html = "";
+    staffDB.forEach((s, i) => {
+        const roleClass = s.type === 'PRODUCTION' ? 'role-production' : (s.type === 'DELIVERY' ? 'role-delivery' : 'role-dispatch');
+        html += `<tr>
+            <td><div style="font-weight: 600;">${s.name}</div></td>
+            <td><span class="badge-role ${roleClass}">${s.type}</span></td>
+            <td><span class="badge-shop">${s.shop}</span></td>
+            <td>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-sm btn-outline-primary" onclick="editStaff(${i})">Edit</button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteStaff(${i})">Del</button>
+                </div>
+            </td>
+        </tr>`;
+    });
+    tb.innerHTML = html;
+}
+
+function renderProduction() {
+    const tb = document.getElementById('prodTable'); if(!tb) return;
+    let html = "";
+    const day = erpDB[currentDate];
+    if(day && day.productions) {
+        day.productions.forEach((p, i) => {
+            html += `<tr>
+                <td><span class="badge-shop" style="background:#e2e8f0; color:#1e293b; font-weight:700;">#${i+1}</span></td>
+                <td><div style="font-weight: 600;">${p.shop}</div></td>
+                <td>${p.staff}</td>
+                <td><span class="badge-shop" style="background:#e0f2fe; color:#0369a1;">${p.product}</span></td>
+                <td><span class="badge-role role-dispatch">${p.type}</span></td>
+                <td style="text-align:right; font-weight: 700; color: var(--primary);">${p.qty} L</td>
+            </tr>`;
+        });
+    }
+    tb.innerHTML = html;
+}
+
+function renderDelivery() {
+    const g = document.getElementById('deliveryGrid'); if(!g) return;
+    let html = "";
+    const rDay = routeDaysDB[currentDate];
+    if(!rDay) { g.innerHTML = "<div style='grid-column: 1/-1; padding:32px 20px; text-align:center; color:#64748b; background: white; border-radius: 12px; border: 1px solid var(--border); font-weight: 500;'>No route data for this date</div>"; return; }
+    let dr = {};
+    ['PACKET','LOOSE'].forEach(c => {
+        if(rDay[c] && rDay[c].trips) rDay[c].trips.forEach(t => {
+            if(!dr[t.driver]) dr[t.driver] = { d:0, a:0, t:0 }; dr[t.driver].d += Number(t.dosa)||0; dr[t.driver].a += Number(t.appam)||0; dr[t.driver].t++;
+        });
+    });
+    const drivers = Object.keys(dr);
+    if(drivers.length === 0) {
+        g.innerHTML = "<div style='grid-column: 1/-1; padding:32px 20px; text-align:center; color:#64748b; background: white; border-radius: 12px; border: 1px solid var(--border); font-weight: 500;'>No deliveries recorded on this date</div>";
+        return;
+    }
+    drivers.forEach(n => {
+        html += `<div class="driver-card">
+            <div class="driver-head">
+                <span>${n}</span>
+                <span>${dr[n].t} ${dr[n].t === 1 ? 'Trip' : 'Trips'}</span>
+            </div>
+            <div class="d-stat">
+                <div class="d-stat-item">
+                    <div class="d-stat-lbl">Dosa</div>
+                    <div class="d-stat-val">${dr[n].d}</div>
+                </div>
+                <div class="d-stat-item">
+                    <div class="d-stat-lbl">Appam</div>
+                    <div class="d-stat-val">${dr[n].a}</div>
+                </div>
+            </div>
+        </div>`;
+    });
+    g.innerHTML = html;
+}
+
+let searchTimeout;
+function debouncedRenderClients() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(renderClients, 100);
+}
+
+function renderClients() {
+    const tb = document.getElementById('clientTable'); if(!tb) return;
+    const searchEl = document.getElementById('clientSearch');
+    const search = searchEl ? searchEl.value.toLowerCase() : "";
+    const sortEl = document.getElementById('clientSort');
+    const sort = sortEl ? sortEl.value : "none";
+    
+    let list = clientDB.map((c, idx) => ({ ...c, originalIndex: idx }));
+    
+    if(search) {
+        list = list.filter(c => c.name.toLowerCase().includes(search));
+    }
+    
+    if(sort === 'asc') {
+        list.sort((a,b) => a.name.localeCompare(b.name));
+    } else if(sort === 'desc') {
+        list.sort((a,b) => b.name.localeCompare(a.name));
+    }
+    
+    let html = "";
+    for(let i=0; i<list.length; i++) {
+        const c = list[i];
+        html += `<tr>
+            <td><div style="font-weight: 600;">${c.name}</div></td>
+            <td><span style="color: var(--text-light); font-family: monospace;">${c.phone||'-'}</span></td>
+            <td>
+                <div style="display: flex; gap: 4px; align-items: center;">
+                    <span class="badge-shop" style="background: #ecfdf5; color: #047857; font-weight: 600;">Dosa: ₹${c.pd}</span>
+                    <span class="badge-shop" style="background: #fef2f2; color: #b91c1c; font-weight: 600;">Appam: ₹${c.pa}</span>
+                </div>
+            </td>
+            <td>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-sm btn-outline-primary" onclick="editClient(${c.originalIndex})">Edit</button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteClient(${c.originalIndex})">Del</button>
+                </div>
+            </td>
+        </tr>`; 
+    }
+    tb.innerHTML = html;
+}
+
+window.debouncedRenderClients = debouncedRenderClients;
+window.renderClients = renderClients;
+
+function renderRouteMaster() {
+    const tb = document.getElementById('routeTable'); if(!tb) return;
+    let html = "";
+    routeMasterDB.forEach((r, i) => {
+        html += `<tr>
+            <td><div style="font-weight: 600; font-size: 14px;">📍 ${r.name}</div></td>
+            <td>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-sm btn-outline-primary" onclick="editRoute(${i})">Edit</button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteRoute(${i})">Del</button>
+                </div>
+            </td>
+        </tr>`;
+    });
+    tb.innerHTML = html;
+}
+window.renderRouteMaster = renderRouteMaster;
+
+function renderSales() {
+    const tb = document.getElementById('salesTable'); if(!tb) return;
+    let sMap = {};
+    Object.keys(routeDaysDB).forEach(d => {
+        const rDay = routeDaysDB[d];
+        ['PACKET','LOOSE'].forEach(c => {
+            if(rDay[c] && rDay[c].shops) {
+                Object.keys(rDay[c].shops).forEach(sn => {
+                    const s = rDay[c].shops[sn]; if(!sMap[sn]) sMap[sn] = { s:0, p:0 };
+                    const cl = clientDB.find(x=>x.name===sn); const pD = cl?cl.pd:45; const pA = cl?cl.pa:55;
+                    const val = (Number(s.dosa.sale)||0 + Number(s.dosa.cr)||0)*pD + (Number(s.appam.sale)||0 + Number(s.appam.cr)||0)*pA;
+                    sMap[sn].s += val; sMap[sn].p += (Number(s.cashReceived)||0) + (Number(s.gpayReceived)||0);
+                });
+            }
+        });
+    });
+    let html = "";
+    Object.keys(sMap).forEach(n => {
+        const bal = sMap[n].s - sMap[n].p;
+        const balColor = bal > 0 ? 'var(--danger)' : (bal < 0 ? 'var(--success)' : 'var(--text-dark)');
+        const balWeight = bal !== 0 ? '700' : '500';
+        html += `<tr>
+            <td><div style="font-weight: 600;">${n}</div></td>
+            <td style="font-weight: 600; color: #1e293b;">₹${sMap[n].s.toLocaleString()}</td>
+            <td style="font-weight: 600; color: var(--success);">₹${sMap[n].p.toLocaleString()}</td>
+            <td style="text-align:right; font-weight: ${balWeight}; color: ${balColor};">₹${bal.toLocaleString()}</td>
+        </tr>`;
+    });
+    tb.innerHTML = html;
+}
+
+window.syncSalesClients = function() {
+    let added = 0;
+    const namesWithSales = new Set();
+    Object.keys(routeDaysDB).forEach(d => {
+        const rDay = routeDaysDB[d];
+        ['PACKET','LOOSE'].forEach(c => {
+            if(rDay[c] && rDay[c].shops) Object.keys(rDay[c].shops).forEach(sn => namesWithSales.add(sn));
+        });
+    });
+
+    namesWithSales.forEach(name => {
+        if(!clientDB.find(x => x.name === name)) {
+            clientDB.push({ name: name, phone: "", pd: 45, pa: 55 });
+            added++;
+        }
+    });
+
+    if(added > 0) {
+        supabase.from('config').upsert({ key: 'clients_v4', value: { list: clientDB } }).then(() => {
+            alert(`✅ Successfully added ${added} missing clients to the register.`);
+            refreshUI();
+        });
+    } else {
+        alert("ℹ️ All clients in sales analytics are already in the register.");
+    }
+};
+
+window.bulkImportManualList = function() {
+    const manualNames = ['KKV CHEMBUMUKKU', 'MALABAR STORES KATITHARA', 'AR BAKERY (lOOSE)', 'SHIYAS NETTOR', 'MALLUS KADAVANTHRA', 'POTTAYIL STORES', 'BHASI UDHAYAMPEROOR', 'ANIL STORES PANAGAD', 'VINAYAGA MLA ROAD', 'KOTTARAM (Loose)', 'VICHOOS', 'VELIKAGATHU PANAGAD', 'JOMON JAMES THEVARA', 'SALAM (LOOSE)', 'COOP MART, ALINCHUDU', 'ALIANS (LOOSE)', 'NAZAR', 'NATHANIYA NETTOR', 'OLIPARAMBIL', 'CHARLS STORES NETTOR', 'FAMILY MINI MART THERVARA', 'MAHENDRAN STORES MLA ROAD', 'ARUN BAKERY PANAGAD', 'KANNAKATTU', 'OLIVE STORES', 'TBS, ALINCHUDU', 'HOMEYMART JANADA', 'PRIYA STORES', 'HARISREE STORES TRIPUNITURA', 'CLASSIK FORT', 'RADHA STORES TRIPUNITURA', 'POORNASREE', 'KRISHNA STORES THEVARA FERRY', 'EOS', 'MK STORES MADAVANA', 'ANJANA MADAVANA', 'MARIA KATTITHARA', 'DIVINE MADAVANA', 'JASS', 'KRK', 'SANDEEP MARADU', 'KGF, PADIVATTAM', 'KAYEES', 'ANU STORES', 'RAVI STORES PANAGAD', 'MEHRIN STORES VENNALA', 'PAINACLE, ALINCHUDU', 'SB STORES TRIPUNITURA', 'ROYAL SUPER MARKET KATHRIKADAVU', 'AJ STORES AMEDA TEMPLE', 'SP STORES EROOR', 'SREE LAKSHMI UDAYAMPEROOR', 'AR BAKERY PANAGAD', 'PRIME SUPER MARKET THEVARA', 'SABARI STORES MLA ROAD', 'KARTHIGA MLA ROAD', 'KADAKKATIL', 'AJWA SUPER MARKET', 'MADHA VEG. THEVARA', 'REYANS', 'NICE BAKERY PANAGAD', 'MALABAR KADAVANTHRA', 'JEYAN EROOR', 'HOT & COOL', 'SWEET CORNER KUMBALAM', 'JOY NIRAVATH', 'PONNUS THEVARA', 'RAGAVA STORES KADAVANDHRA', 'GRAND', 'SHOPY FRESH PANAGAD', 'SHIPYARD', 'MADHA STORES KADAVANTHRA', 'SN SUPERMARKET KADAVANTHRA', 'KALABHAM', 'KUMBALAM (LOOSE)', 'DQ STORES, KENNADIMUKKU', 'VELAYUDHAN TRIPUNITURA', 'DREAMS FOOT WEAR NETTOR', 'THOMMIS PUDHIYAKAVU', 'USHA GANDHI SQUARE', 'JALEEL KUNDANOOR', 'DARSHANA VENNALA', 'GURUVAYOOR PAPPADAM, TRIPUNITHURA', 'SAJU STORES', 'SHAJI STORES THEVARA', 'NIRMAL STORES KUNDANOOR', 'BISMI STORES NETTOR', 'USHA SN PARK', 'AMMUS STORES JANADHA', 'KRISHNA (LOOSE)', 'RUBY', 'AMALA STORES', 'SINDHU, CHEMBUMUKKU', 'PALATHINGAL', 'SHAMSHU MARADU', 'SUDHARSHAN', 'RAHUL STORES UDHAYAMPEROOR', 'NEPOLIAN NETTOR', 'VBAZAR MADAVANA', 'ROYAL BAKERY, EROOR', 'GG MART', 'CHEMBU BAKERY, CHEMBUMUKKU', 'LALSON UDHAYAKAVALA', 'KM STORES, TRIPUNITHURA', 'RADHAKRISHNAN EROOR', 'AS METRO MART', 'MFM, THEVARA', 'FOUR STAR MADAVANA', 'SUPER BAKERY PANAMPILLY NAGAR', 'SREELAYA STORES NETTOR', 'DAILY HOME NEEDS', 'GAYATHRI ( LOOSE)', 'WILSON', 'TMART', 'MALABAR BAKERY VENNALA', 'SN GANDHI NAGAR', 'USHA KOTTARAM', 'PARTHAS', 'KKAR NETTOR', 'HOME MART CHEMBUMUKKU', 'ROYAL NETTOR', 'JAFER NETTOR', 'ALMA BAKERY', 'GIRISH', 'CHAKKALAKKAL', 'HIGH RANGE', 'KERALA STORES PANANGAD', 'GROSERY HUBS, CHEMBUMUKKU', 'AS PALACHARAKUKADA', 'VELIYIL STORES', 'ADHAYAKADA', 'EXPRESS VEGITABLES', 'NANDANA MARADU', 'LOTUS PROVISIONS, VAZHAKALA', 'ST. MARYS THEVARA', 'LALS INN GRAND', 'AN STORES KATITHARA', 'V BAZAR MADAVANA', 'ZERA MINIMART', 'AMMU STORES MOOLEPADAM', 'JOYS STORES KUMBALAM', 'NEW MASJID VENNALA', 'ATLANTIS', 'DARSHANA', 'SS STORES', "PAPPA'S", 'ST MARYS', 'LALAN PANAGAD', 'HEAVENLY BAKERS KATITHARA', 'SREELAKSHMI NETTOR (SHIBU)', 'NIYA STORES KATITHARA', 'KM STORES THEVARA', 'SALIM NETTOR', 'MANI STORES PANAGAD', 'ST JOSEPH KADAVANTHRA', 'ST MARYS UDHAYAMPEROOR', 'ODEES CHIPS, TRIPUNITURA', 'HISHIGHNESS SUPER MARKET TRPT', 'LATHA STORES KATITHARA', 'SRECCS', 'SREELAKSHMI (CHATTY KADA) MARADU', 'BISMI STORES UDHAYAMPEROOR', 'NISHA STORES MARADU', 'LAKSHMI STORES, CHEMBUMUKKU', 'PRAVELIL KUMBALAM', 'ANNA BAKERY', 'JEYAN STORES VENNALA', 'SUBWAY', 'TEA CUP', 'NEW KOTTARAM (LOOSE)', 'JOHNS KATITHARA', 'HOT CUP, VAZHAKALA', 'JJOHNS HOSPITALITY', 'GOWRI STORES MLA ROAD', 'PUTHENVEETIL NETTOR', 'JOY STORES THEVARA', 'MALIAKKAL', 'SI BAKERY THEVARA', 'MINNUMART ROAD', 'USHA NUCLEUS', 'ANJAL KATITHARA', 'ROYAL BAKERY, MARKET ROAD, TRIPUNITURA', 'MILMA THEVARA', 'CHOICE BAKERY, TRIPUNITURA', 'VASINIO', 'ANGEL PROVISIONS THEVARA', 'VYSAKH', 'JANADHA MARGIN', 'JEYA BAKERY MULANTHURUTHY', 'SAROMA STORES', 'LITTLE MARKET THEVARA', 'GREEN KART, ALINCHUDU', 'SWAD SWEETS AND SNACKS, TRIPUNITURA', 'TJS NETTOR', 'AV MART TRAPUNITURA', 'VIJAYA BAKERY', 'ABDULLA STORES VENNALA', 'DIVINE KUMBALAM', 'VIJAYAN PETTA', 'SIDDARTH KAKKANAD', 'KR STORES, PALARIVATTAM', 'BROWNS BAKERY THEVARA', 'SREEKRISHNA UDHAYATHINVATHIL', 'TKM FRESH MART', 'GREEN FRESH', 'KL', 'HILLPALACE', 'AJITHA(LOOSE)', 'ARYA STORES MLA ROAD', 'SHARADHA THEVARA', 'SUPER BAKERY PERUMANOOR', 'KANNADIYIL', 'SREE KRISHNA, NETTOR', 'CKP', 'JEYAN NETTOR', 'SWAMYS (Loose)', 'HOMES', 'VELAYUDHAN THEVARA', 'PHILOMINA', 'SUDHAGARAN NADAKKAVU', 'MAHADEVA STORES KATITHARA', 'MINI TEA STALL, PUDHIYA ROAD', 'SINDHU NORTH (LOOSE)', 'LEELA FOOD / SIJO', 'MARGIN FREE, THEVARA', 'SHILIKUMAR, PUDHIYAROAD', 'ROYAL BAKERY MARADU', 'MT MART NETTOR', 'RAVI STORES KATITHARA', 'CMA', 'PADMANABAN PANAGAD', 'DEVI FANCY', 'SREEKRISHNA ENTERPRISES TRIPUNITURA', 'ROYAL BAKERS UDHAYAMPEROOR', 'AJ STORES KATITHARA', 'ARUVELIL', 'SUPER BAKERY MATTAMAL THEVARA', 'JJ PROVISIONS', 'MARIA STORES', 'SINI EROOR', 'BAKE AND TAKE NETTOR', 'GRK', 'THOTTATHIL BABU MARADU', 'ANNADHA(LOOSE)', 'SATHAR VEG', 'PM STORES', 'PRASANTH THEVARA FERRY', 'SUVIK, TRIPUNITHURA', 'GRAND STORES GANDHI SQUARE', 'AMBADY', 'USHA PANDAVAM', 'MALEKKAD', 'NITHA SUDESH', 'RAJESH STORES EROOR', 'PICKZIMART VENNALA', 'KINGINI MARADU', 'AJ STORES MLA ROAD', 'RADHA', 'SAKETH', 'TK SLEEBA', 'PRIDE STORES KUNDANOOR', 'KRISHNAKUMAR MARADU', 'BABU KOTTAYATHUPARA', 'KAIRALI SUPER MARKET', 'BABYS BAKERY NETTOR', 'BALAN STORES TRIPUNITHURA', 'FATHIMA STORES KADAVANTHRA', 'ROYAL BAKERS MULANTHURUTHY', 'HOSPITAL SHOP NETTOR', 'JAISHA BAKERY', 'NM STORES PANAGAD', 'WILL MART KADAVANTHRA', 'LOEL BAKERY', 'SAMRUTHI SUPER MARKET', 'FATHIMA BAKERY NETTOR', 'SAJITH BAKERY PANAGAD', 'PAPILON SUPER STORES', 'KALLUPURAKKAL KATITHARA', 'KUMAR BAKERS, TRIPUNITURA', 'KEETHARAYIL STORES KUNDANOOR', 'KARTHIGA NETTOR', 'DHYAN STORES TRIPUNITURA', 'DAY TO DAY MINI MART', 'AISWARYA COOL BAR', 'MAGIC OVEN KADAVANTHRA', 'ALIF MART MOOLEPADAM', 'AKR PANAGAD', 'SHIJI BAKERY KATTITHARA', 'WEONE', 'ANJANEYA STORES TRIPUNITURA', 'REAL STORES', 'TRUE BELL THEVARA', 'ABDU VEGITABLES VENNALA', 'COLLEGE CANTEEN (LOOSE)', 'KRISHNA STORES KANIYAMPUZHA', 'PATHEMARI', 'ALI STORES VENNALA', 'MN', 'PRINCE STORES', 'PRAGASAN JANADHA ROAD MARADU', 'NEW STAR UDHAYAMPEROOR', 'MARIYA KUNDANOOR', 'SRP', 'RAVI CHELLUCIRA BHAGAVATHY TEMPLE', 'AMK PANAGAD', 'GLOBAL FRESH NETTOR', 'PRANAVAM CHEMBUMUKKU', 'KOTHARI SUPER MARKET', 'KRISHNA STORES (NEW)', 'TEA BAY KUMBALAM', 'PAULY STORES THEVARA', 'DARSHANA EROOR', 'VALLUVASSERY KADAVANTHRA', 'SUJITH THATTUKADA', 'AREENA', 'ST THOMAS MULANTHURUTHY', 'K&K', 'BEST BAKERS nr THURUTHY TEMPLE', 'AMEYA ANANDHU', 'JACKSON THEVARA', 'HOMEY MART JANADHA', 'PRIDE STORES', 'KEEDHARAYIL', 'SHILIKUMAR', 'Retail loose (kkshop)', 'HABIT EAT(LOOSE)', 'MARGIN FREE MARKET THEVARA'];
+    
+    let added = 0;
+    manualNames.forEach(name => {
+        if(!clientDB.find(x => x.name === name)) {
+            clientDB.push({ name: name, phone: "", pd: 45, pa: 55 });
+            added++;
+        }
+    });
+
+    if(added > 0) {
+        supabase.from('config').upsert({ key: 'clients_v4', value: { list: clientDB } }).then(() => {
+            alert(`✅ Successfully imported ${added} new clients from the list.`);
+            refreshUI();
+        });
+    } else {
+        alert("ℹ️ All clients in the list are already in your register.");
+    }
+};
+
+window.dbDoctor = async function() {
+    if(!confirm("This will verify config structures and seed them in Supabase if missing. Continue?")) return;
+    try {
+        const keys = ['staff_v4', 'clients_v4', 'routeMaster_v4'];
+        let seeded = 0;
+        for(const key of keys) {
+            const { data } = await supabase.from('config').select('value').eq('key', key).maybeSingle();
+            if (!data) {
+                await supabase.from('config').insert({ key: key, value: { list: [] } });
+                seeded++;
+            }
+        }
+        alert(`✅ Database Sync Complete! Verified config tables. Seeded ${seeded} missing keys.`);
+        location.reload();
+    } catch (e) {
+        console.error("DB Doctor Error:", e);
+        alert("Error verifying database: " + e.message);
+    }
+};
+
+loadData();
+document.getElementById('prodDate').value = currentDate;
+document.getElementById('delDate').value = currentDate;
+</script>
+</body>
+</html>
