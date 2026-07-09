@@ -532,7 +532,8 @@
 </div>
 
 <script>
-const supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+let erpDaysSubscription = null;
 
 /* --- CONFIG --- */
 const SHOPS = ["Nettor", "Kannankulangara", "Vadakkekotta"];
@@ -799,7 +800,6 @@ window.closeErrorModal = closeErrorModal;
 window.handleClientInput = handleClientInput;
 
 /* --- DATA HANDLING --- */
-let erpDaysSubscription = null;
 
 function loadDataFromStorage() {
     // 1. Immediate Load from LocalStorage for speed and safety restoration
